@@ -1,0 +1,13 @@
+# Python 3.7+ 兼容锁定（在本机 Python 3.7 与 3.8+ 均可安装运行）
+fastapi==0.99.1
+uvicorn[standard]==0.22.0
+pydantic==1.10.13
+SQLAlchemy==2.0.23
+python-jose[cryptography]==3.3.0
+passlib==1.7.4
+httpx==0.24.1
+python-multipart==0.0.6
+Pillow==9.5.0
+PyMySQL==1.1.0
+redis==4.6.0
+cryptography==40.0.2

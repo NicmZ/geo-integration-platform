@@ -1,0 +1,57 @@
+version: "3.8"
+
+# GEO Integration Platform 一键编排：MySQL + Redis + 后端 API + 前端(Nginx)
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: geo_platform
+      MYSQL_USER: geo
+      MYSQL_PASSWORD: geo123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ugeo", "-pgeo123"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: ../backend
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: mysql+pymysql://geo:geo123@mysql:3306/geo_platform?charset=utf8mb4
+      REDIS_URL: redis://redis:6379/0
+      EXECUTOR: local            # 超算集群改为 slurm
+      CPU_CONCURRENCY: "4"
+      SECRET_KEY: change-me-in-prod
+      PAYMENT_SANDBOX: "true"
+      CAPTCHA_ENABLED: "true"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "9527:80"
+    volumes:
+      - ../frontend/dist:/usr/share/nginx/html:ro
+      - ../deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:
+  redis_data:
